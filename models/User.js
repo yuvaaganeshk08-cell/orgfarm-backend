@@ -14,19 +14,11 @@ const userSchema = new mongoose.Schema({
   progress: { type: Object, default: {} },
 }, { timestamps: true });
 
-userSchema.pre("save", async function (next) {
-  try {
-    if (!this.isModified("password")) return next();
-
-    // Avoid double-hashing if the value is already a bcrypt hash.
-    if (isBcryptHash(this.password)) return next();
-
-    const rounds = Number(process.env.BCRYPT_SALT_ROUNDS || 10);
-    this.password = await bcrypt.hash(this.password, rounds);
-    next();
-  } catch (error) {
-    next(error);
-  }
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
+  if (isBcryptHash(this.password)) return;
+  const rounds = Number(process.env.BCRYPT_SALT_ROUNDS || 10);
+  this.password = await bcrypt.hash(this.password, rounds);
 });
 
 userSchema.methods.comparePassword = async function (plainPassword) {
